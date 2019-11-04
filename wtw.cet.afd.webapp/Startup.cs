@@ -37,7 +37,7 @@ namespace wtw.cet.afd.webapp
         options.KnownProxies.Clear();
 
         // Restrict which forwarding hosts we will allow
-        options.AllowedHosts = Configuration.GetValue<string>("AllowedHosts")?.Split(';').ToList();
+        options.AllowedHosts = Configuration.GetValue<string>("AllowedForwardedHosts")?.Split(';').ToList();
       });
 
       // add health checking
