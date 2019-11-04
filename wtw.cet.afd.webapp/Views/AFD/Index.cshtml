@@ -1,0 +1,28 @@
+﻿
+@{
+    ViewData["Title"] = "AFD";
+}
+
+<h1 class="display-4">AFD Details</h1>
+
+<p>Host name is: @ViewData["HostName"]</p>
+<ul>
+    <li>Request Method: @ViewData["Method"]"</li>
+    <li>Request Scheme: @ViewData["Scheme"]"</li>
+    <li>Request Path: @ViewData["Path"]"</li>
+    <li>Request RemoteIp: @ViewData["RemoteIp"]"</li>
+</ul>
+<table class="table">
+    <thead>
+        <tr><th>Key</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var (key, value) in ViewData["Headers"] as Dictionary<string, string>)
+        {
+            <tr>
+                <td>@key</td>
+                <td>@value</td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -24,6 +24,10 @@ namespace AFD_WebApp
     public void ConfigureServices(IServiceCollection services)
     {
       services.AddControllersWithViews();
+
+      /////////////////////////////////////////////////
+
+      services.AddHttpContextAccessor();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -52,6 +56,6 @@ namespace AFD_WebApp
                   name: "default",
                   pattern: "{controller=Home}/{action=Index}/{id?}");
       });
-    }
+   }
   }
 }
