@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
-namespace AFD_WebApp.Controllers
+namespace wtw.cet.afd.webapp.Controllers
 {
   public class AFDController : Controller
   {

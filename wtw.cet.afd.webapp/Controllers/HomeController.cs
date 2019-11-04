@@ -5,9 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using AFD_WebApp.Models;
+using wtw.cet.afd.webapp.Models;
 
-namespace AFD_WebApp.Controllers
+namespace wtw.cet.afd.webapp.Controllers
 {
   public class HomeController : Controller
   {

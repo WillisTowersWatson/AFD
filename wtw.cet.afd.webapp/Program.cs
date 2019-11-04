@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace AFD_WebApp
+namespace wtw.cet.afd.webapp
 {
   public class Program
   {

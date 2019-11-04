@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29411.138
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AFD WebApp", "wtw.cet.afd.webapp\AFD WebApp.csproj", "{097C6CDF-0F4E-4CE4-859F-EB0214A6129E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wtw.cet.afd.webapp", "wtw.cet.afd.webapp\wtw.cet.afd.webapp.csproj", "{097C6CDF-0F4E-4CE4-859F-EB0214A6129E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wtw.cet.afd.tests", "wtw.cet.afd.tests\wtw.cet.afd.tests.csproj", "{4EBDD7A3-D5E4-4056-9BA2-1A9F8DDE35E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{097C6CDF-0F4E-4CE4-859F-EB0214A6129E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{097C6CDF-0F4E-4CE4-859F-EB0214A6129E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{097C6CDF-0F4E-4CE4-859F-EB0214A6129E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4EBDD7A3-D5E4-4056-9BA2-1A9F8DDE35E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4EBDD7A3-D5E4-4056-9BA2-1A9F8DDE35E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4EBDD7A3-D5E4-4056-9BA2-1A9F8DDE35E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4EBDD7A3-D5E4-4056-9BA2-1A9F8DDE35E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

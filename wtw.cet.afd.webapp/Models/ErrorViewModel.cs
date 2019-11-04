@@ -1,6 +1,6 @@
 using System;
 
-namespace AFD_WebApp.Models
+namespace wtw.cet.afd.webapp.Models
 {
   public class ErrorViewModel
   {
