@@ -35,6 +35,9 @@ namespace wtw.cet.afd.webapp
         options.KnownNetworks.Clear();
         options.KnownProxies.Clear();
       });
+
+      // add health checking
+      services.AddHealthChecks();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -42,6 +45,11 @@ namespace wtw.cet.afd.webapp
     {
       // process X-Forwarded* headers
       app.UseForwardedHeaders();
+
+      // Use health checks
+      app.UseHealthChecks("/healthcheck");
+
+      //////////////////////////////////////////////////////
 
       if (env.IsDevelopment())
       {
