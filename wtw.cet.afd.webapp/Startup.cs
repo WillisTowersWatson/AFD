@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Linq;
 
 namespace wtw.cet.afd.webapp
 {
@@ -34,6 +35,9 @@ namespace wtw.cet.afd.webapp
 
         options.KnownNetworks.Clear();
         options.KnownProxies.Clear();
+
+        // Restrict which forwarding hosts we will allow
+        options.AllowedHosts = Configuration.GetValue<string>("AllowedHosts")?.Split(';').ToList();
       });
 
       // add health checking
