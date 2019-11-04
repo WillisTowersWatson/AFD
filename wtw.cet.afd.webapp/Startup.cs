@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
+using wtw.cet.afd.webapp.Interfaces;
 
 namespace wtw.cet.afd.webapp
 {
@@ -24,6 +25,14 @@ namespace wtw.cet.afd.webapp
 
       /////////////////////////////////////////////////
 
+      // Create and register our app repo singleton
+      var appRepository = new AppRepository();
+      {
+        services.AddSingleton<IAppRepository>(appRepository);
+        appRepository.AllowedHosts = Configuration.GetValue<string>("AllowedHosts")?.Split(';').ToList();
+        appRepository.AllowedForwardedHosts = Configuration.GetValue<string>("AllowedForwardedHosts")?.Split(';').ToList();
+      }
+
       // enable access to the HttpContext for display purposes
       services.AddHttpContextAccessor();
 
@@ -37,7 +46,7 @@ namespace wtw.cet.afd.webapp
         options.KnownProxies.Clear();
 
         // Restrict which forwarding hosts we will allow
-        options.AllowedHosts = Configuration.GetValue<string>("AllowedForwardedHosts")?.Split(';').ToList();
+        options.AllowedHosts = appRepository.AllowedForwardedHosts;
       });
 
       // add health checking
