@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Net.Http.Headers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -52,30 +53,38 @@ namespace AspNetCoreTests
       });
     }
 
+    public class XForwardedForTestData : IEnumerable<object?[]>
+    {
+      public IEnumerator<object?[]> GetEnumerator()
+      {
+        // happy path
+        yield return new object?[] { "MY.Front.Door.net", "MY.Front.Door.net", null, HttpStatusCode.OK };
+
+        // our AFD is probing (requests by the AFD probing mechanism)
+        yield return new object[] { null, "my.azurewebsite.net", HEALTH_PROBE_PATH, HttpStatusCode.OK };
+
+        // our AFD is probing the wrong path!
+        yield return new object[] { null, "my.azurewebsite.net", BAD_HEALTH_PROBE_PATH, HttpStatusCode.BadRequest };
+
+        // someone is using another AFD to access the backend
+        yield return new object[] { "spoof.front.door.net", "my.azurewebsite.net", null, HttpStatusCode.BadRequest };
+
+        // someone is using our AFD to spoof a probe by injecting X-FD-HealthProbe headers
+        // TODO: Check to see if AFD strips this from headers before passing it on
+        yield return new object[] { "my.front.door.net", "MY.Front.Door.net", HEALTH_PROBE_PATH, HttpStatusCode.BadRequest };
+
+        // a spoof proxy is being used to probe (requests via their AFD for example)
+        yield return new object[] { "SPOOF.Front.Door.net", "my.azurewebsite.net", HEALTH_PROBE_PATH, HttpStatusCode.BadRequest };
+
+        // a hacker is using their probe as a way of accessing/doing a ddos attack on a poorly secured app which may allow any probes through
+        yield return new object[] { "SPOOF.Front.Door.net", "my.azurewebsite.net", BAD_HEALTH_PROBE_PATH, HttpStatusCode.BadRequest };
+      }
+
+      IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
     [Theory]
-
-    // happy path
-    [InlineData("MY.Front.Door.net", "MY.Front.Door.net", null, HttpStatusCode.OK)]
-
-    // our AFD is probing (requests by the AFD probing mechanism)
-    [InlineData(null, "my.azurewebsite.net", HEALTH_PROBE_PATH, HttpStatusCode.OK)]
-
-    // our AFD is probing the wrong path!
-    [InlineData(null, "my.azurewebsite.net", BAD_HEALTH_PROBE_PATH, HttpStatusCode.BadRequest)]
-
-    // someone is using another AFD to access the backend
-    [InlineData("spoof.front.door.net", "my.azurewebsite.net", null, HttpStatusCode.BadRequest)]
-
-    // someone is using our AFD to spoof a probe by injecting X-FD-HealthProbe headers
-    // TODO: Check to see if AFD strips this from headers before passing it on
-    [InlineData("my.front.door.net", "MY.Front.Door.net", HEALTH_PROBE_PATH, HttpStatusCode.BadRequest)]
-
-    // a spoof proxy is being used to probe (requests via their AFD for example)
-    [InlineData("SPOOF.Front.Door.net", "my.azurewebsite.net", HEALTH_PROBE_PATH, HttpStatusCode.BadRequest)]
-
-    // a hacker is using their probe as a way of accessing/doing a ddos attack on a poorly secured app which may allow any probes through
-    [InlineData("SPOOF.Front.Door.net", "my.azurewebsite.net", BAD_HEALTH_PROBE_PATH, HttpStatusCode.BadRequest)]
-
+    [ClassData(typeof(XForwardedForTestData))]
     public async Task SecureAccessChecking(string xForwardedHost, string requestHost, string? probePath, HttpStatusCode expectedCode)
     {
       var builder = new WebHostBuilder()
