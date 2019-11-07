@@ -72,6 +72,12 @@ Even using the 'Purge' option on AFD I still experienced cached results which ma
 
 There's a chance there's a caching issue on my m/c but tried from Incognito, Firefox, IE etc
 
+## Change your probe path at your peril
+
+![Bouncing Health Probe](readme/Bouncing%20Probe%20Health.png "Bouncing Health Probe")
+
+Looks like at least one of the AFD probes is still pinging my old (and now invalid) health probe.
+
 ## Azure DevOps builds
 
 Just for giggles I use DevOps to build this repo and here's its current status:
