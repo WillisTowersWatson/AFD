@@ -6,6 +6,39 @@ Azure Front Door Service is an Application Delivery Network (ADN) as a service, 
 
 Ref: <https://docs.microsoft.com/en-us/azure/frontdoor/front-door-faq>
 
+## TL;DR
+
+This code explores the use of Azure Front Door and has resulted in some AFD middleware which only requires a list of front-end hosts and the probe path to work.
+
+``` csharp
+    public void ConfigureServices(IServiceCollection services)
+    {
+      ...
+      // Optional: Add Health Checks
+      services.AddHealthChecks();
+
+      // Add the Azure Front Door middleware
+      services.AddAzureFrontDoor((options) =>
+      {
+        // Supply a list of AFD front-ends
+        options.AllowedFrontEndHosts = new List<string>() { "my.front.door.net" };
+        // Path for the AFD health probe
+        options.HealthProbePath = "/HealthProbe";
+      });
+      ...
+    }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IAppRepository appRepository)
+    {
+      // Optional:Use the Health Checks middleware to provide an endpoint for the AFD probe
+      app.UseHealthChecks("/HealthProbe");
+
+      // Use the Azure Front Door middleware
+      app.UseAzureFrontDoor();
+    }
+
+```
+
 ## So why the experiments?
 
 A: Securing my app behind the Front Door.
