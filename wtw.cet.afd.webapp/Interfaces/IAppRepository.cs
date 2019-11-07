@@ -1,13 +1,15 @@
 ﻿using System.Collections.Generic;
 
-namespace wtw.cet.afd.webapp.Interfaces
+namespace WTW.CET.AFD.WebApp.Interfaces
 {
   /// <summary>
   /// Singleton application repository
   /// </summary>
   public interface IAppRepository
   {
-    IList<string> AllowedHosts { get; set; }
-    IList<string> AllowedForwardedHosts { get; set; }
+    IList<string> AllowedFrontEndHosts { get; set; }
+    string HealthProbePath { get; set; }
+
+    IList<HttpContextCacheEntry> HttpContexts { get; }
   }
 }

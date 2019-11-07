@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using wtw.cet.afd.webapp.Interfaces;
+using WTW.CET.AFD.WebApp.Interfaces;
 
-namespace wtw.cet.afd.webapp.Controllers
+namespace WTW.CET.AFD.WebApp.Controllers
 {
   public class AFDController : Controller
   {
@@ -32,10 +32,10 @@ namespace wtw.cet.afd.webapp.Controllers
       ViewData["Headers"] = headers;
       ViewData["RemoteIp"] = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress;
 
+      ViewData["AllowedFrontEndHosts"] = appRepository.AllowedFrontEndHosts == null ? "" : string.Join(";", appRepository.AllowedFrontEndHosts);
 
-      ViewData["AllowedHosts"] = string.Join(";", appRepository.AllowedHosts);
-      ViewData["AllowedForwardedHosts"] = string.Join(";", appRepository.AllowedForwardedHosts);
-      
+      ViewData["OriginalContexts"] = appRepository.HttpContexts;
+
       return View();
     }
   }

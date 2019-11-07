@@ -1,25 +1,42 @@
 ﻿
 @{
-    ViewData["Title"] = "AFD";
+    ViewData["Title"] = "AFD (6)";
 }
 
 <h1 class="display-4">AFD Details</h1>
 
-<p>Host name is: @ViewData["HostName"]</p>
 <ul>
+    <li>Host: @ViewData["HostName"]</li>
     <li>Request Method: @ViewData["Method"]</li>
     <li>Request Scheme: @ViewData["Scheme"]</li>
     <li>Request Path: @ViewData["Path"]</li>
     <li>Request RemoteIp: @ViewData["RemoteIp"]</li>
-    <li>Allowed Allowed Hosts: @ViewData["AllowedHosts"]</li>
-    <li>Allowed Forwarded Hosts: @ViewData["AllowedForwardedHosts"]</li>
+    <li>Allowed Forwarded Hosts: @ViewData["AllowedFrontEndHosts"]</li>
 </ul>
+
+<p>Contexts</p>
+
+<table class="table">
+    <thead>
+        <tr><th>Host</th><th>Path</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var ctx in (IList<WTW.CET.AFD.WebApp.Interfaces.HttpContextCacheEntry>)ViewData["OriginalContexts"])
+        {
+            <tr>
+                <td>@ctx.Host</td>
+                <td>@ctx.Path</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
 <table class="table">
     <thead>
         <tr><th>Key</th><th>Value</th></tr>
     </thead>
     <tbody>
-        @foreach (var (key, value) in ViewData["Headers"] as Dictionary<string, string>)
+        @foreach (var (key, value) in (Dictionary<string, string>)ViewData["Headers"])
         {
             <tr>
                 <td>@key</td>

@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29411.138
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wtw.cet.afd.webapp", "wtw.cet.afd.webapp\wtw.cet.afd.webapp.csproj", "{097C6CDF-0F4E-4CE4-859F-EB0214A6129E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WTW.CET.AFD.WebApp", "WTW.CET.AFD.WebApp\WTW.CET.AFD.WebApp.csproj", "{097C6CDF-0F4E-4CE4-859F-EB0214A6129E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wtw.cet.afd.tests", "wtw.cet.afd.tests\wtw.cet.afd.tests.csproj", "{4EBDD7A3-D5E4-4056-9BA2-1A9F8DDE35E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WTW.CET.AFD.Tests", "WTW.CET.AFD.Test\WTW.CET.AFD.Tests.csproj", "{4EBDD7A3-D5E4-4056-9BA2-1A9F8DDE35E4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WTW.CET.AFD.Middleware", "WTW.CET.AFD.Middleware\WTW.CET.AFD.Middleware.csproj", "{E767A8EE-8963-4B30-8934-729BDAAF0F02}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{4EBDD7A3-D5E4-4056-9BA2-1A9F8DDE35E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4EBDD7A3-D5E4-4056-9BA2-1A9F8DDE35E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4EBDD7A3-D5E4-4056-9BA2-1A9F8DDE35E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E767A8EE-8963-4B30-8934-729BDAAF0F02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E767A8EE-8963-4B30-8934-729BDAAF0F02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E767A8EE-8963-4B30-8934-729BDAAF0F02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E767A8EE-8963-4B30-8934-729BDAAF0F02}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

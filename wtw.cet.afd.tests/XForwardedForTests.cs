@@ -6,130 +6,71 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Net.Http.Headers;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using WTW.CET.AFD.Middleware;
 using Xunit;
 
-namespace AspNetCoreTests
+namespace WTW.CET.AFD.Tests
 {
   /// <summary>
   /// Tests to help me understand the support for X-Forwarded-* headers
   /// </summary>
-  public class XForwardedForTests
+  public partial class XForwardedForTests
   {
-    // TODO: Parameterise this/pull them from configuration info
-    private readonly List<string> AFD_FQDNs = new List<string>() { "my.front.door.net" };
-    private const string HEALTH_PROBE_PATH = "/HealthProbe";
-
-    private const string BAD_HEALTH_PROBE_PATH = "/PokeTheApp";
-
-    private void HandleHealthProbe(IApplicationBuilder app)
-    {
-      //const string XHandledHealthProbeHeaderName = "X-HandledHealthProbe";
-
-      app.Run(ctx =>
-      {
-        // 1. Health probes come from internal AFD systems so legitimate probes won't have X-Forwarded-* headers
-        if (!string.IsNullOrEmpty(ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedHostHeaderName])
-              || !string.IsNullOrEmpty(ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedForHeaderName])
-              || !string.IsNullOrEmpty(ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedProtoHeaderName]))
-        {
-          ctx.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-          return Task.CompletedTask;
-        }
-
-        // Expecting HOST to be <this app>.azurewebsites.net
-        // TODO: Only allow this to continue IF the host is what we 'expect' <<< does this make sense?
-        // Assert.Equal(ctx.Request.Headers[HeaderNames.Host], <this app>.azurewebsites.net)
-
-        // 2. Simulate the probe coming from our AFD so that subsequent 'AllowHost' processing can continue as expected
-        // TODO: Map from HOST to AFD
-        ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedHostHeaderName] = AFD_FQDNs.First();
-
-        return Task.CompletedTask;
-      });
-    }
-
-    public class XForwardedForTestData : IEnumerable<object?[]>
-    {
-      public IEnumerator<object?[]> GetEnumerator()
-      {
-        // happy path
-        yield return new object?[] { "MY.Front.Door.net", "MY.Front.Door.net", null, HttpStatusCode.OK };
-
-        // our AFD is probing (requests by the AFD probing mechanism)
-        yield return new object[] { null, "my.azurewebsite.net", HEALTH_PROBE_PATH, HttpStatusCode.OK };
-
-        // our AFD is probing the wrong path!
-        yield return new object[] { null, "my.azurewebsite.net", BAD_HEALTH_PROBE_PATH, HttpStatusCode.BadRequest };
-
-        // someone is using another AFD to access the backend
-        yield return new object[] { "spoof.front.door.net", "my.azurewebsite.net", null, HttpStatusCode.BadRequest };
-
-        // someone is using our AFD to spoof a probe by injecting X-FD-HealthProbe headers
-        // TODO: Check to see if AFD strips this from headers before passing it on
-        yield return new object[] { "my.front.door.net", "MY.Front.Door.net", HEALTH_PROBE_PATH, HttpStatusCode.BadRequest };
-
-        // a spoof proxy is being used to probe (requests via their AFD for example)
-        yield return new object[] { "SPOOF.Front.Door.net", "my.azurewebsite.net", HEALTH_PROBE_PATH, HttpStatusCode.BadRequest };
-
-        // a hacker is using their probe as a way of accessing/doing a ddos attack on a poorly secured app which may allow any probes through
-        yield return new object[] { "SPOOF.Front.Door.net", "my.azurewebsite.net", BAD_HEALTH_PROBE_PATH, HttpStatusCode.BadRequest };
-      }
-
-      IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    }
-
+    /// <summary>
+    /// Secure our app which is a backend to Azure Front Door.
+    /// We need to inspect headers in order to ensure this backend isn't being access from a spoof AFD.
+    /// </summary>
+    /// <param name="xForwardedHost">The simulated value of X-Forwarded-Host</param>
+    /// <param name="requestHost">The requested HOST</param>
+    /// <param name="probePath">If not null this is a Probe simulation and this is the path being probed</param>
+    /// <param name="expectedCode">The expected status code for this request</param>
     [Theory]
     [ClassData(typeof(XForwardedForTestData))]
-    public async Task SecureAccessChecking(string xForwardedHost, string requestHost, string? probePath, HttpStatusCode expectedCode)
+    public async Task SecureAccessCheckingWithMiddleware(string xForwardedHost, string requestHost, string? probePath, HttpStatusCode expectedCode)
     {
       var builder = new WebHostBuilder()
-          // Only allow our AFDs as a host
           .ConfigureServices(services =>
           {
-            services.AddHostFiltering(options =>
+            // Configure the AFD service
+            // NOTE: 
+            services.AddAzureFrontDoor((options) =>
             {
-              options.AllowEmptyHosts = false;
-              options.AllowedHosts = AFD_FQDNs;
+              // Only allow our AFD front-ends to be proxies
+              options.AllowedFrontEndHosts = XForwardedForTestData.AllowedFrontEndHosts;
+              // Need to identify the health probe path as needs special processing
+              options.HealthProbePath = XForwardedForTestData.HealthProbePath;
             });
           })
 
           .Configure(app =>
           {
-            // 1. Process the health probe request using specialised logic
-            app.MapWhen(ctx =>
-                string.Equals(ctx.Request.Headers["X-FD-HealthProbe"], "1", StringComparison.OrdinalIgnoreCase)
-                && string.Equals(ctx.Request.Path, HEALTH_PROBE_PATH, StringComparison.OrdinalIgnoreCase),
-              HandleHealthProbe);
+            app.UseAzureFrontDoor();
 
-            // 2. Configure forwarded headers middleware to only process headers from our expected forwarder
-            {
-              var options = new ForwardedHeadersOptions
-              {
-                ForwardedHeaders = ForwardedHeaders.XForwardedFor,
-
-                // only allow AFD_XFORWARD_VALUE as a forwarder to be transferred to HOST
-                AllowedHosts = AFD_FQDNs
-              };
-              options.KnownProxies.Clear();
-              options.KnownNetworks.Clear();
-
-              app.UseForwardedHeaders(options);
-            }
-
-            // 3. Only allow our AFDs as a host
-            app.UseHostFiltering();
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ////// Now do some testing
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Assert that the HOST is set to the expected AFD
-            app.Use((context, next) =>
+            app.Use(async (context, next) =>
             {
-              Assert.Contains<string>(context.Request.Headers[HeaderNames.Host], AFD_FQDNs, StringComparer.OrdinalIgnoreCase);
-              return Task.CompletedTask;
+              // At this point the HOST should be set to one of the front ends
+              Assert.Contains<string>(context.Request.Headers[HeaderNames.Host], XForwardedForTestData.AllowedFrontEndHosts, StringComparer.OrdinalIgnoreCase);
+              await next();
             });
+
+            // Simulate only having recognised endpoints of XForwardedForTestData.HEALTH_PROBE_PATH and null
+            app.UseWhen(ctx =>
+              ctx.Response.StatusCode == (int)HttpStatusCode.OK
+              && !string.Equals(ctx.Request.Path, XForwardedForTestData.HealthProbePath, StringComparison.OrdinalIgnoreCase)
+              && ctx.Request.Path != null,
+            (app) => app.Use(async (ctx, next) =>
+            {
+              ctx.Response.StatusCode = (int)HttpStatusCode.NotFound;
+              await next();
+            }));
 
             // Run the tests
             app.Run(c => Task.CompletedTask);
@@ -138,6 +79,7 @@ namespace AspNetCoreTests
 
       // Build the test server to perform the tests against
       var server = new TestServer(builder);
+
       {
         var response = await server.SendAsync(ctx =>
         {
@@ -150,7 +92,127 @@ namespace AspNetCoreTests
             ctx.Request.Headers["X-FD-HealthProbe"] = "1";
           }
         });
-        Assert.Equal(response.Response.StatusCode, (int)expectedCode);
+
+        Assert.Equal((int)expectedCode, response.Response.StatusCode);
+      }
+    }
+
+    /// <summary>
+    /// Secure our app which is a backend to Azure Front Door.
+    /// We need to inspect headers in order to ensure this backend isn't being access from a spoof AFD.
+    /// </summary>
+    /// <param name="xForwardedHost">The simulated value of X-Forwarded-Host</param>
+    /// <param name="requestHost">The requested HOST</param>
+    /// <param name="probePath">If not null this is a Probe simulation and this is the path being probed</param>
+    /// <param name="expectedCode">The expected status code for this request</param>
+    [Theory]
+    [ClassData(typeof(XForwardedForTestData))]
+    public async Task SecureAccessChecking(string xForwardedHost, string requestHost, string? probePath, HttpStatusCode expectedCode)
+    {
+      var builder = new WebHostBuilder()
+          .ConfigureServices(services =>
+          {
+            services.AddHostFiltering(options =>
+            {
+              options.AllowEmptyHosts = false;
+              options.AllowedHosts = XForwardedForTestData.AllowedFrontEndHosts;
+            });
+          })
+
+          .Configure(app =>
+          {
+            // 1. Process the health probe request using specialised logic
+            app.UseWhen(ctx => ctx.Request.Headers["X-FD-HealthProbe"] == "1",
+              (app) => app.Use(async (ctx, next) =>
+              {
+                // check for bad requests to the health probe
+                if (
+                  // Only allow probes on our recognised path
+                  !string.Equals(ctx.Request.Path, XForwardedForTestData.HealthProbePath, StringComparison.OrdinalIgnoreCase)
+
+                  // Health probes come from internal AFD systems so legitimate probes WILL NOT have X-Forwarded-* headers
+                  || !string.IsNullOrEmpty(ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedHostHeaderName]))
+                {
+                  // Return a Bad Request and short-circuit any more processing
+                  ctx.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                  //return Task.CompletedTask;
+                  return;
+                }
+
+                // Simulate the probe coming from our AFD so that subsequent 'AllowHost' processing can continue as expected
+                // TODO: Map from HOST to AFD
+                ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedHostHeaderName] = XForwardedForTestData.AllowedFrontEndHosts.FirstOrDefault();
+
+                // or we could repond immediately instead of hitting the endpoint
+                // await ctx.Response.WriteAsync("OK");
+
+                //return Task.CompletedTask;
+                await next();
+              }));
+
+            // 2. Configure forwarded headers middleware to only process headers from our expected forwarder
+            {
+              var options = new ForwardedHeadersOptions
+              {
+                ForwardedHeaders = ForwardedHeaders.All,
+
+                // only allow these hosts as forwarder to be transferred to HOST
+                AllowedHosts = XForwardedForTestData.AllowedFrontEndHosts
+              };
+              options.KnownProxies.Clear();
+              options.KnownNetworks.Clear();
+
+              app.UseForwardedHeaders(options);
+            }
+
+            // 3. Only allow our AFDs as a host
+            app.UseHostFiltering();
+
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ////// Now do some testing
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            // Assert that the HOST is set to the expected AFD
+            app.Use(async (context, next) =>
+            {
+              // At this point the HOST should be set to one of the front ends
+              Assert.Contains<string>(context.Request.Headers[HeaderNames.Host], XForwardedForTestData.AllowedFrontEndHosts, StringComparer.OrdinalIgnoreCase);
+              await next();
+            });
+
+            // Simulate only having recognised endpoints of XForwardedForTestData.HEALTH_PROBE_PATH and null
+            app.UseWhen(ctx =>
+              ctx.Response.StatusCode == (int)HttpStatusCode.OK
+              && !string.Equals(ctx.Request.Path, XForwardedForTestData.HealthProbePath, StringComparison.OrdinalIgnoreCase)
+              && ctx.Request.Path != null,
+            (app) => app.Use(async (ctx, next) =>
+            {
+              ctx.Response.StatusCode = (int)HttpStatusCode.NotFound;
+              await next();
+            }));
+
+            // Run the tests
+            app.Run(c => Task.CompletedTask);
+          });
+
+
+      // Build the test server to perform the tests against
+      var server = new TestServer(builder);
+
+      {
+        var response = await server.SendAsync(ctx =>
+        {
+          ctx.Request.Headers[HeaderNames.Host] = requestHost;
+          ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedHostHeaderName] = xForwardedHost;
+          if (probePath != null)
+          {
+            // Check access is restricted to the health probe path if we're probing
+            ctx.Request.Path = probePath;
+            ctx.Request.Headers["X-FD-HealthProbe"] = "1";
+          }
+        });
+
+        Assert.Equal((int)expectedCode, response.Response.StatusCode);
       }
     }
 
@@ -271,7 +333,7 @@ namespace AspNetCoreTests
             ctx.Request.Headers["X-FD-HealthProbe"] = "1";
         });
 
-        Assert.Equal(response.Response.StatusCode, (int)expectedCode);
+        Assert.Equal((int)expectedCode, response.Response.StatusCode);
       }
     }
   }

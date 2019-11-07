@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HostFiltering;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.Collections.Generic;
 using System.Linq;
-using wtw.cet.afd.webapp.Interfaces;
+using WTW.CET.AFD.Middleware;
+using WTW.CET.AFD.WebApp.Interfaces;
 
-namespace wtw.cet.afd.webapp
+namespace WTW.CET.AFD.WebApp
 {
   public class Startup
   {
@@ -18,49 +21,81 @@ namespace wtw.cet.afd.webapp
 
     public IConfiguration Configuration { get; }
 
-    // This method gets called by the runtime. Use this method to add services to the container.
+    // This method gets called by the runtime.  this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
       services.AddControllersWithViews();
+
+      // enable access to the HttpContext for display purposes
+      services.AddHttpContextAccessor();
 
       /////////////////////////////////////////////////
 
       // Create and register our app repo singleton
       var appRepository = new AppRepository();
       {
+        string getConfigValue(string appSettingName)
+        {
+          var result = Configuration.GetValue<string>(appSettingName);
+          if (result == null) throw new ArgumentNullException(appSettingName, $"Application setting missing");
+          return result;
+        }
+
+        IList<string> getList(string appSettingName)
+        {
+          return getConfigValue(appSettingName).Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        appRepository.AllowedFrontEndHosts = getList("AFD.AllowedFrontEndHosts"); 
+        appRepository.HealthProbePath = getConfigValue("AFD.HealthProbePath");
+
         services.AddSingleton<IAppRepository>(appRepository);
-        appRepository.AllowedHosts = Configuration.GetValue<string>("AllowedHosts")?.Split(';').ToList();
-        appRepository.AllowedForwardedHosts = Configuration.GetValue<string>("AllowedForwardedHosts")?.Split(';').ToList();
       }
 
-      // enable access to the HttpContext for display purposes
-      services.AddHttpContextAccessor();
-
-      // Configure the ForwardedHeaders processing
-      services.Configure<ForwardedHeadersOptions>(options =>
-      {
-        options.ForwardedHeaders =
-            ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
-
-        options.KnownNetworks.Clear();
-        options.KnownProxies.Clear();
-
-        // Restrict which forwarding hosts we will allow
-        options.AllowedHosts = appRepository.AllowedForwardedHosts;
-      });
+      ///////////////////////////////////////////////
+      /// Specific AFD processing
+      ///////////////////////////////////////////////
 
       // add health checking
       services.AddHealthChecks();
+
+      services.AddAzureFrontDoor((options) =>
+      {
+        options.AllowedFrontEndHosts = appRepository.AllowedFrontEndHosts;
+        options.HealthProbePath = appRepository.HealthProbePath;
+      });
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Reflection will not allow this to be static")]
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IAppRepository appRepository)
     {
-      // process X-Forwarded* headers
-      app.UseForwardedHeaders();
+      //try
+      //{
+      //  // todo: so we can step into the Host Filtering middleware
+      //  var x = new HostFilteringMiddleware(null, null, null);
+      //}
+      //catch (Exception)
+      //{
+
+      //}
+
+      app.Use(async (context, next) =>
+      {
+        appRepository.HttpContexts.Add(new HttpContextCacheEntry(context));
+        await next();
+      });
 
       // Use health checks
-      app.UseHealthChecks("/healthcheck");
+      app.UseHealthChecks(appRepository.HealthProbePath);
+
+      app.UseAzureFrontDoor();
+
+      app.Use(async (context, next) =>
+      {
+        appRepository.HttpContexts.Add(new HttpContextCacheEntry(context));
+        await next();
+      });
 
       //////////////////////////////////////////////////////
 
