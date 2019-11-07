@@ -1,5 +1,4 @@
-﻿
-@{
+﻿@{
     ViewData["Title"] = "AFD (6)";
 }
 
@@ -10,26 +9,32 @@
     <li>Request Method: @ViewData["Method"]</li>
     <li>Request Scheme: @ViewData["Scheme"]</li>
     <li>Request Path: @ViewData["Path"]</li>
-    <li>Request RemoteIp: @ViewData["RemoteIp"]</li>
-    <li>Allowed Forwarded Hosts: @ViewData["AllowedFrontEndHosts"]</li>
+    <li>Request Remote IP: @ViewData["RemoteIp"]</li>
+    <li>Allowed Front-End Hosts: @ViewData["AllowedFrontEndHosts"]</li>
 </ul>
 
 <p>Contexts</p>
 
-<table class="table">
-    <thead>
-        <tr><th>Host</th><th>Path</th></tr>
-    </thead>
-    <tbody>
-        @foreach (var ctx in (IList<WTW.CET.AFD.WebApp.Interfaces.HttpContextCacheEntry>)ViewData["OriginalContexts"])
-        {
-            <tr>
-                <td>@ctx.Host</td>
-                <td>@ctx.Path</td>
-            </tr>
-        }
-    </tbody>
-</table>
+@{
+    var contextCache = (IList<WTW.CET.AFD.WebApp.Interfaces.HttpContextCacheEntry>)ViewData["OriginalContexts"];
+    if (contextCache.Count > 0)
+    {
+        <table class="table">
+            <thead>
+                <tr><th>Host</th><th>Path</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var ctx in contextCache)
+                {
+                    <tr>
+                        <td>@ctx.Host</td>
+                        <td>@ctx.Path</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
 
 <table class="table">
     <thead>
