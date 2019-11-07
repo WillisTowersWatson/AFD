@@ -52,50 +52,55 @@ namespace WTW.CET.AFD.WebApp
         services.AddSingleton<IAppRepository>(appRepository);
       }
 
-      ///////////////////////////////////////////////
-      /// Specific AFD processing
-      ///////////////////////////////////////////////
-
       // add health checking
       services.AddHealthChecks();
+
+      ///////////////////////////////////////////////
+      /// START: Specific AFD processing
+      ///////////////////////////////////////////////
 
       services.AddAzureFrontDoor((options) =>
       {
         options.AllowedFrontEndHosts = appRepository.AllowedFrontEndHosts;
         options.HealthProbePath = appRepository.HealthProbePath;
       });
+
+      ///////////////////////////////////////////////
+      /// END: Specific AFD processing
+      ///////////////////////////////////////////////
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Reflection will not allow this to be static")]
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IAppRepository appRepository)
     {
-      //try
+      //// Add this context to the debug cache
+      //app.Use(async (context, next) =>
       //{
-      //  // todo: so we can step into the Host Filtering middleware
-      //  var x = new HostFilteringMiddleware(null, null, null);
-      //}
-      //catch (Exception)
-      //{
+      //  appRepository.HttpContexts.Add(new HttpContextCacheEntry(context));
+      //  await next();
+      //});
 
-      //}
-
-      app.Use(async (context, next) =>
-      {
-        appRepository.HttpContexts.Add(new HttpContextCacheEntry(context));
-        await next();
-      });
-
-      // Use health checks
+      // Use health checks middleware to provide an endpoint for the AFD probe
       app.UseHealthChecks(appRepository.HealthProbePath);
 
+      ///////////////////////////////////////////////
+      /// START: Specific AFD processing
+      ///////////////////////////////////////////////
+
+      // Use the Azure Front Door middleware
       app.UseAzureFrontDoor();
 
-      app.Use(async (context, next) =>
-      {
-        appRepository.HttpContexts.Add(new HttpContextCacheEntry(context));
-        await next();
-      });
+      ///////////////////////////////////////////////
+      /// END: Specific AFD processing
+      ///////////////////////////////////////////////
+
+      //// Add this context to the debug cache
+      //app.Use(async (context, next) =>
+      //{
+      //  appRepository.HttpContexts.Add(new HttpContextCacheEntry(context));
+      //  await next();
+      //});
 
       //////////////////////////////////////////////////////
 
