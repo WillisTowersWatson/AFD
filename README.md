@@ -1,6 +1,6 @@
 # Experimenting with Azure Front Door
 
-## What is Azure Front Door Service?
+## What is the Azure Front Door Service?
 
 Azure Front Door Service is an Application Delivery Network (ADN) as a service, offering various layer 7 load-balancing capabilities for your applications. It provides dynamic site acceleration (DSA) along with global load balancing with near real-time failover. It is a highly available and scalable service, which is fully managed by Azure.
 
@@ -43,7 +43,7 @@ This code explores the use of Azure Front Door and has resulted in some AFD midd
 
 A: Securing my app behind the Front Door.
 
-Unlike an App Gateway, AFD is a global service with global points of presence which is great, BUT ... that means my app can be hit from a range of global IP addresses AND (this is the kicker) it could be **ANY** AFD.
+Unlike an App Gateway, AFD is a global service with global points of presence which is great, BUT that means my app can be hit from a range of global IP addresses AND (this is the kicker) it could be **ANY** AFD.
 
 In theory, therefore, any AFD gets access to my backend and we don't want this.
 
@@ -51,21 +51,21 @@ The [FAQ](https://docs.microsoft.com/en-us/azure/frontdoor/front-door-faq#how-do
 
 > To lock down your application to accept traffic only from your specific Front Door, you will need to set up IP ACLs for your backend and then restrict the set of accepted values for the header 'X-Forwarded-Host' sent by Azure Front Door
 
-Once we've set up the IP ACLs we need to address the issue of X-Forwarded-Host hence the tests and simple app.
+Once we've set up the IP ACLs we need to address the issue of X-Forwarded-Host; hence the tests and this repo.
 
-NOTE: What the above it doesn't mention is the Health Probe.
+NOTE: What the above doesn't mention is the Health Probe.
 
 ## Health Probes
 
 In order for AFD to determine latency and availability of the backend.
 
-When you design your Front Door you specify the URL of your Health Probe -- something that returns a status code of 200 when all's well.
+When you design your Front Door you specify the path to your Health Probe -- something that returns a status code of 200 when all's well.
 
-The requests come from the AFD infrastructure so the request passes through the IP ACLs, however, the Health Probe isn't originating from your AFD it's originating from a remote AFD probe so there's **no X-Forwarded-Host header** do the protection you've put in place will reject the request and your app will be marked as unhealthy.
+The requests come from the AFD infrastructure so the request passes through the IP ACLs, however, the Health Probe isn't originating from your AFD it's originating from a remote AFD node so there's **no X-Forwarded-Host header** so the protection you've put in place will reject the request and your app will be marked as unhealthy.
 
 Health probe requests do, however, include the header **X-FD-HealthProbe** and set it to **1**.
 
-We therefore need to do some more header processing to allow for this.
+We therefore have to do some header processing to allow for this.
 
 ### Q: How can we detect if a **spoof** AFD is probing my app using a 'health probe'?
 
@@ -85,7 +85,7 @@ Without any other remediation steps:
 
 e.g. Does AFD strip X-FD-HealthProbe from requests going through an AFD?
 
-A: Good question, don't know
+A: Don't know, will investigate.
 
 ## Issues
 
@@ -97,7 +97,7 @@ If out app wants a quiet life we set the probe interval to 255 seconds so we get
 
 **NOPE!**
 
-Because it's a global service with many endpoints the last time I checked my app gets pinged **200 times/minute**!  My simple maths indicates that **850 sources** are now hammering my app :(
+Because it's a global service with many nodes and the last time I checked my app gets pinged **200 times/minute**!  My simple maths indicates that **850 nodes** are now hammering my app :(
 
 ## Caching caching caching…
 
