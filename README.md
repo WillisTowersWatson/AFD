@@ -107,7 +107,7 @@ There's a chance there's a caching issue on my m/c but tried from Incognito, Fir
 
 ## Change your probe path at your peril
 
-![Bouncing Health Probe](readme/Bouncing%20Probe%20Health.png?raw=true "Bouncing Health Probe")
+![Bouncing Health Probe](https://raw.githubusercontent.com/WillisTowersWatson/AFD/master/readme/Bouncing%20Probe%20Health.PNG "Bouncing Health Probe")
 
 Looks like at least one of the AFD probes is still pinging my old (and now invalid) health probe.
 
