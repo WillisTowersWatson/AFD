@@ -14,7 +14,7 @@ This code explores the use of Azure Front Door and has resulted in some AFD midd
     public void ConfigureServices(IServiceCollection services)
     {
       ...
-      
+
       // Optional: Add Health Checks
       services.AddHealthChecks();
 
@@ -26,7 +26,7 @@ This code explores the use of Azure Front Door and has resulted in some AFD midd
         // Path for the AFD health probe
         options.HealthProbePath = "/HealthProbe";
       });
-      
+
       ...
     }
 
@@ -37,7 +37,7 @@ This code explores the use of Azure Front Door and has resulted in some AFD midd
 
       // Use the Azure Front Door middleware
       app.UseAzureFrontDoor();
-      
+
       ...
     }
 
