@@ -25,7 +25,11 @@ This seems a much more reasonable rate and # nodes.
 
 NOTE: I'll be resetting the interval back to 30 seconds as this is is the MSFT recommended interval.
 
-According to the above and my findings from the above U should then expect a request rate of ~200/m.
+\</later\>
+
+According to the above and my findings from the above I should then expect a request rate of a bit over 200/m which is what I do indeed get:
+
+![30 Second interval Health Probe](30%20Second%20interval%20probe.PNG?raw=true "Bouncing Health Probe")
 
 ## Change your probe path at your peril
 

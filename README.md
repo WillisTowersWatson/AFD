@@ -84,11 +84,11 @@ For general info on working behind a proxy/load balancer see [here](https://docs
 
 The code is built using VS2019 and based on .Net Core 3.1 but I hope the concepts are translatable.
 
-### [AzureFrontDoorExtensions.cs](WTW.CET.AFD.Middleware\AzureFrontDoorExtensions.cs)
+### [AzureFrontDoorExtensions.cs](WTW.CET.AFD.Middleware/AzureFrontDoorExtensions.cs)
 
 This is the entry-point for the code and where you 'Add' the Middleware (usually in Startup.cs: ConfigureServices()) and 'Use' it (usually in Startup.cs: Configure()).
 
-- [Check for a Health Probe](https://docs.microsoft.com/en-us/azure/frontdoor/front-door-health-probes).  See the implementation [here](WTW.CET.AFD.Middleware\AzureFrontDoorMiddleware.cs)
+- [Check for a Health Probe](https://docs.microsoft.com/en-us/azure/frontdoor/front-door-health-probes).  See the implementation [here](WTW.CET.AFD.Middleware/AzureFrontDoorMiddleware.cs)
 - Process the X-Forwarded headers [using the Forwarded Headers middleware](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer)
 - Use a subclass of Host Filtering Middleware to respond with an Http Status Code of 400 if the resultant host isn't one of our AFD front-ends (see [this discussion on Kestrel](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel) for more info about Host Filtering).
   - NOTE: We can't use the standard HF Middleware as this is injected BEFORE anything else.  Host is set to the *back*-end and is therefore failed.
@@ -173,7 +173,7 @@ Securing services is tricky at best so even if we secure the Web App to only acc
 
 Sometimes some magic happens and what you thought was an issue automagically (technical term) resolves itself.
 
-Examples of these can be found [here](readme\Old%20Issues.md).
+Examples of these can be found [here](readme/Old&#32;Issues.md).
 
 ## Azure DevOps builds
 
