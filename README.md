@@ -1,5 +1,24 @@
 # Experimenting with Azure Front Door
 
+- [Experimenting with Azure Front Door](#experimenting-with-azure-front-door)
+  - [What is the Azure Front Door Service?](#what-is-the-azure-front-door-service)
+  - [TL;DR](#tldr)
+  - [So why the experiments?](#so-why-the-experiments)
+  - [Middleware highlights](#middleware-highlights)
+    - [AzureFrontDoorExtensions.cs](#azurefrontdoorextensionscs)
+  - [Health Probes](#health-probes)
+  - [Ongoing questions](#ongoing-questions)
+    - [Q: How can we detect if a **spoof** AFD is probing my app using a 'health probe'?](#q-how-can-we-detect-if-a-spoof-afd-is-probing-my-app-using-a-health-probe)
+    - [Q: Are AFD-related X- headers sanitised by AFD?](#q-are-afd-related-x--headers-sanitised-by-afd)
+    - [Q: What's the purpose of the backed host header?](#q-whats-the-purpose-of-the-backed-host-header)
+  - [Issues](#issues)
+  - [Caching caching caching…](#caching-caching-caching)
+  - [Be PATIENT!](#be-patient)
+  - [What next?](#what-next)
+    - [Suggestions @Microsoft](#suggestions-microsoft)
+  - [Resolved Issues](#resolved-issues)
+  - [Azure DevOps builds](#azure-devops-builds)
+  
 ## What is the Azure Front Door Service?
 
 > Azure Front Door Service is an Application Delivery Network (ADN) as a service, offering various layer 7 load-balancing capabilities for your applications. It provides dynamic site acceleration (DSA) along with global load balancing with near real-time failover. It is a highly available and scalable service, which is fully managed by Azure.
@@ -69,10 +88,10 @@ The code is built using VS2019 and based on .Net Core 3.1 but I hope the concept
 
 This is the entry-point for the code and where you 'Add' the Middleware (usually in Startup.cs: ConfigureServices()) and 'Use' it (usually in Startup.cs: Configure()).
 
-* [Check for a Health Probe](https://docs.microsoft.com/en-us/azure/frontdoor/front-door-health-probes).  See the implementation [here](WTW.CET.AFD.Middleware\AzureFrontDoorMiddleware.cs)
-* Process the X-Forwarded headers [using the Forwarded Headers middleware](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer)
-* Use a subclass of Host Filtering Middleware to respond with an Http Status Code of 400 if the resultant host isn't one of our AFD front-ends (see [this discussion on Kestrel](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel) for more info about Host Filtering).
-  * NOTE: We can't use the standard HF Middleware as this is injected BEFORE anything else.  Host is set to the *back*-end and is therefore failed.
+- [Check for a Health Probe](https://docs.microsoft.com/en-us/azure/frontdoor/front-door-health-probes).  See the implementation [here](WTW.CET.AFD.Middleware\AzureFrontDoorMiddleware.cs)
+- Process the X-Forwarded headers [using the Forwarded Headers middleware](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer)
+- Use a subclass of Host Filtering Middleware to respond with an Http Status Code of 400 if the resultant host isn't one of our AFD front-ends (see [this discussion on Kestrel](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel) for more info about Host Filtering).
+  - NOTE: We can't use the standard HF Middleware as this is injected BEFORE anything else.  Host is set to the *back*-end and is therefore failed.
 
 ## Health Probes
 
@@ -92,9 +111,9 @@ We therefore have to do some extra header processing to allow for this.
 
 The Request headers will look legitimate:
 
-* The IP is from an AFD so passes IP restrictions
-* X-FD-HealthProbe is set to 1
-* X-Forwarded-Host isn't set
+- The IP is from an AFD so passes IP restrictions
+- X-FD-HealthProbe is set to 1
+- X-Forwarded-Host isn't set
 
 A: Ongoing ... any suggestions welcome.
 
@@ -132,23 +151,23 @@ Not so much an issue, but calling out a gotcha.  Your AFD changes need to be rep
 
 Securing services is tricky at best so even if we secure the Web App to only access requests from the AFD service's address range.
 
-* Global nodes ping the Web App legitimately (health probes)
-* Global AFD spoofs bypass IP restrictions and hit the Web App
-* Global AFD spoofs bypass IP restrictions and can overwhelm the Web App using AFD Health Probes
-* Non-obvious code changes need to be made to mitigate the above.
+- Global nodes ping the Web App legitimately (health probes)
+- Global AFD spoofs bypass IP restrictions and hit the Web App
+- Global AFD spoofs bypass IP restrictions and can overwhelm the Web App Using AFD Health Probes
+- Non-obvious code changes need to be made to mitigate the above.
 
 ### Suggestions @Microsoft
 
-* Extend the Health Probe process to include an X-Forwarded-Host header set to AFD front-end
-  * Access can then follow standard happy path access pattern
-* Include Forwarded header processing in the BLADE to reject access to the Web App **before** hitting it
-* The Host Filtering middleware for .Net Core rejects access on unrecognised Hosts, however, this isn't re-applied after Forwarded Hosts filtering and there's no option for Forwarded Hosts to reject any hosts not in AllowHosts (via a 400 response for example).  Another approach might be:
-  * Apply Forwarded Hosts middleware BEFORE Hosts Filtering
-  * Unrecognised Forwarded hosts can then be rejected by the standard Hosts Filtering logic
-* Ensure all X-Forwarded-* headers are striped by AFD before injecting its own -- to stop spoofing via AFD
-  * TO DO: Check to see if this is done today
-* Is there a need for a more secure exchange between AFD and back-end services?
-  * Currently we rely solely on the X-Forwarded-Host header.  Is there an opportunity for secret/cert exchange between these services akin to Managed Identities?
+- Extend the Health Probe process to include an X-Forwarded-Host header set to AFD front-end
+  - Access can then follow standard happy path access pattern
+- Include Forwarded header processing in the BLADE to reject access to the Web App **before** hitting it
+- The Host Filtering middleware for .Net Core rejects access on unrecognised Hosts, however, this isn't re-applied after Forwarded Hosts filtering and there's no option for Forwarded Hosts to reject any hosts not in AllowHosts (via a 400 response for example).  Another approach might be:
+  - Apply Forwarded Hosts middleware BEFORE Hosts Filtering
+  - Unrecognised Forwarded hosts can then be rejected by the standard Hosts Filtering logic
+- Ensure all X-Forwarded-* headers are striped by AFD before injecting its own -- to stop spoofing via AFD
+  - TO DO: Check to see if this is done today
+- Is there a need for a more secure exchange between AFD and back-end services?
+  - Currently we rely solely on the X-Forwarded-Host header.  Is there an opportunity for secret/cert exchange between these services akin to Managed Identities?
 
 ## Resolved Issues
 
