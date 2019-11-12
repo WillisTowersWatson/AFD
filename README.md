@@ -118,30 +118,17 @@ As I'm using a Web App for the backend I guess I can't change it.
 
 ## Issues
 
-### Over probing
-
-When we specify the AFD back end, we can specity both the path to the probe, the protocol (HTTP/HTTPS) and the *Probe Interval (seconds)*.
-
-If our app wants a quiet life we set the probe interval to 255 seconds so we get probed once every 4 or so minutes right?
-
-**NOPE!**
-
-Because it's a global service with many nodes and the last time I checked my app gets pinged **200 times/minute**!  My simple maths indicates that **850 nodes** are now hammering my app :(
-
 ## Caching caching caching…
 
 Even using the 'Purge' option on AFD I still experienced cached results which makes checking changes difficult.
 
 There's a chance there's a caching issue on my m/c but tried from Incognito, Firefox, IE etc
 
-## Change your probe path at your peril
+## Be PATIENT!
 
-![Bouncing Health Probe](readme/Bouncing%20Probe%20Health.PNG?raw=true "Bouncing Health Probe")
+Not so much an issue, but calling out a gotcha.  Your AFD changes need to be replicated across the AFD node estate.  This takes time so results of changes to your AFD will not happen instantaneously.
 
-* The above chart shows 2 probes ... I only have 1 configured (the dark blue 'line' in this)
-* Something odd is going on with the latest probe.  Perhaps a set of the AFD nodes are still pinging my old (and now invalid) health probe.
-
-## What next
+## What next?
 
 Securing services is tricky at best so even if we secure the Web App to only access requests from the AFD service's address range.
 
@@ -150,11 +137,24 @@ Securing services is tricky at best so even if we secure the Web App to only acc
 * Global AFD spoofs bypass IP restrictions and can overwhelm the Web App using AFD Health Probes
 * Non-obvious code changes need to be made to mitigate the above.
 
-### Suggestions
+### Suggestions @Microsoft
 
-* Extend Health Probe to include X-Forwarded-Host header set to AFD front-end -- access can then follow standard happy path access pattern
-* Add AllowedForwarded* to Web App to reject access to the Web App **before** hitting it
-* Ensure all X-Forwarded-* headers are striped by AFD (assuming this isn't done already) before injecting its own -- to stop spoofing via AFD
+* Extend the Health Probe process to include an X-Forwarded-Host header set to AFD front-end
+  * Access can then follow standard happy path access pattern
+* Include Forwarded header processing in the BLADE to reject access to the Web App **before** hitting it
+* The Host Filtering middleware for .Net Core rejects access on unrecognised Hosts, however, this isn't re-applied after Forwarded Hosts filtering and there's no option for Forwarded Hosts to reject any hosts not in AllowHosts (via a 400 response for example).  Another approach might be:
+  * Apply Forwarded Hosts middleware BEFORE Hosts Filtering
+  * Unrecognised Forwarded hosts can then be rejected by the standard Hosts Filtering logic
+* Ensure all X-Forwarded-* headers are striped by AFD before injecting its own -- to stop spoofing via AFD
+  * TO DO: Check to see if this is done today
+* Is there a need for a more secure exchange between AFD and back-end services?
+  * Currently we rely solely on the X-Forwarded-Host header.  Is there an opportunity for secret/cert exchange between these services akin to Managed Identities?
+
+## Resolved Issues
+
+Sometimes some magic happens and what you thought was an issue automagically (technical term) resolves itself.
+
+Examples of these can be found [here](readme\Old%20Issues.md).
 
 ## Azure DevOps builds
 
