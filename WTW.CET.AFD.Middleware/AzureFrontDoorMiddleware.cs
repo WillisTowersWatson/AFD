@@ -29,26 +29,17 @@ namespace WTW.CET.AFD.Middleware
 
     public void ApplyAzureFrontDoor(HttpContext context)
     {
+      var afdId = context.Request.Headers["X-AzureFDID"];
+
       // 1. Process the health probe request using specialised logic
-      if (context.Request.Headers["X-FD-HealthProbe"] == "1")
+      if (string.IsNullOrEmpty(afdId))
       {
-        // check for bad requests to the health probe
-        if (
-          // Only allow probes on our recognised path
-          (_options.HealthProbePath != null && !string.Equals(context.Request.Path, _options.HealthProbePath, StringComparison.OrdinalIgnoreCase))
-
-          // Health probes come from internal AFD systems so legitimate probes WILL NOT have X-Forwarded-Host header set
-          // NOTE: Other X-Forwarded-* headers may be set
-          || context.Request.Headers.ContainsKey(ForwardedHeadersDefaults.XForwardedHostHeaderName))
-        {
-          // Return a Bad Request and short-circuit any more processing
-          context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-          return;
-        }
-
-        // Simulate the probe coming from our AFD so that subsequent 'AllowHost' processing can continue as expected
-        context.Request.Headers[ForwardedHeadersDefaults.XForwardedHostHeaderName] = _options.DefaultProbeFrontEnd;
+        // Return a Bad Request and short-circuit any more processing
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+        return;
       }
+
+      if(_options.)
     }
   }
 }

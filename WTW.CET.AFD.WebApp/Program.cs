@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace WTW.CET.AFD.WebApp
 {
@@ -15,6 +16,10 @@ namespace WTW.CET.AFD.WebApp
             .ConfigureWebHostDefaults(webBuilder =>
             {
               webBuilder.UseStartup<Startup>();
+            })
+            .ConfigureAppConfiguration((hostingContext, config) =>
+            {
+              config.AddEnvironmentVariables();
             });
   }
 }

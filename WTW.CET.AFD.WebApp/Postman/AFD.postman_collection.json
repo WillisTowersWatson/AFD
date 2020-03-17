@@ -1,0 +1,336 @@
+{
+	"info": {
+		"_postman_id": "d07667cd-3656-4d04-8456-111090c2afa0",
+		"name": "AFD",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "{{frontend.url}} => 200",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fb5dd32e-8bfb-41ee-bcb2-6c404ccac167",
+						"exec": [
+							"pm.test(\"X-Response-Azure-FDID = {{afd.objectid}}}\", function () {",
+							"    _.hasFdidHeader(pm.response);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{frontend.url}}",
+					"host": [
+						"{{frontend.url}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "{{frontend.url}}/fdid => JSON: {AzureFDID: {{afd.objectid}}}",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fb5dd32e-8bfb-41ee-bcb2-6c404ccac167",
+						"exec": [
+							"pm.test(\"Body: JSON: {AzureFDID: {{afd.objectid}}}\", function () {",
+							"    _.hasFdidBody(pm.response);",
+							"});",
+							"",
+							"pm.test(\"X-Response-Azure-FDID = {{afd.objectid}}}\", function () {",
+							"    _.hasFdidHeader(pm.response);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{frontend.url}}/fdid",
+					"host": [
+						"{{frontend.url}}"
+					],
+					"path": [
+						"fdid"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "{{frontend.url}}/healthProbe => 200",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fb5dd32e-8bfb-41ee-bcb2-6c404ccac167",
+						"exec": [
+							"pm.test(\"Body: Health\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    pm.response.to.have.body('Healthy');",
+							"});",
+							"",
+							"pm.test(\"X-Response-Azure-FDID = {{afd.objectid}}}\", function () {",
+							"    _.hasFdidHeader(pm.response);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{frontend.url}}/healthProbe",
+					"host": [
+						"{{frontend.url}}"
+					],
+					"path": [
+						"healthProbe"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "{{spoof.frontend.url}} => 400",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fb5dd32e-8bfb-41ee-bcb2-6c404ccac167",
+						"exec": [
+							"pm.test(\"Should fail\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{spoof.frontend.url}}",
+					"host": [
+						"{{spoof.frontend.url}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "{{spoof.frontend.url}}/fdid => a different AFD object id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fb5dd32e-8bfb-41ee-bcb2-6c404ccac167",
+						"exec": [
+							"function hasDifferentFdidId(response, objectId) {",
+							"    response.to.have.status(200);",
+							"    pm.expect(objectId).not.equal(null);",
+							"    pm.expect(objectId).to.not.equal(_.afdObjectId);",
+							"}",
+							"",
+							"pm.test(\"Body: JSON: {AzureFDID: NOT {{afd.objectid}}}\", function () {",
+							"    hasDifferentFdidId(pm.response, pm.response.json().AzureFDID);",
+							"});",
+							"",
+							"pm.test(\"X-Response-Azure-FDID != {{afd.objectid}}}\", function () {",
+							"    hasDifferentFdidId(pm.response, pm.response.headers.get(\"X-Response-Azure-FDID\"));",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{spoof.frontend.url}}/fdid",
+					"host": [
+						"{{spoof.frontend.url}}"
+					],
+					"path": [
+						"fdid"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "{{spoof.frontend.url}}/healthProbe => 400",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fb5dd32e-8bfb-41ee-bcb2-6c404ccac167",
+						"exec": [
+							"pm.test(\"Should fail\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{spoof.frontend.url}}/healthProbe",
+					"host": [
+						"{{spoof.frontend.url}}"
+					],
+					"path": [
+						"healthProbe"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "{{backend.url}} => 400",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fb5dd32e-8bfb-41ee-bcb2-6c404ccac167",
+						"exec": [
+							"// {{backend.url}} => 400",
+							"pm.test(\"{{backend.url}} => 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{backend.url}}",
+					"host": [
+						"{{backend.url}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "{{backend.url}}/fdid => JSON: {AzureFDID: null}",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fb5dd32e-8bfb-41ee-bcb2-6c404ccac167",
+						"exec": [
+							"// {{backend.url}}/fdid => JSON: {AzureFDID: null}",
+							"pm.test(\"Expect null FDID from backend\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    pm.response.to.have.jsonBody('AzureFDID', null)",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{backend.url}}/fdid",
+					"host": [
+						"{{backend.url}}"
+					],
+					"path": [
+						"fdid"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "{{backend.url}}/healthProbe => 400",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fb5dd32e-8bfb-41ee-bcb2-6c404ccac167",
+						"exec": [
+							"pm.test(\"{{backend.url}}/healthProbe => 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{backend.url}}/healthProbe",
+					"host": [
+						"{{backend.url}}"
+					],
+					"path": [
+						"healthProbe"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "ad00dff8-64d8-44f7-98f7-b74ac62c6da8",
+				"type": "text/javascript",
+				"exec": [
+					"Object.prototype.afdObjectId = pm.variables.get(\"afd.objectid\");",
+					"",
+					"Object.prototype.hasFdidBody = function(response) {",
+					"    response.to.have.status(200);",
+					"    response.to.have.jsonBody('AzureFDID', _.afdObjectId);",
+					"};",
+					"",
+					"Object.prototype.hasFdidHeader = function(response) {",
+					"    response.to.have.status(200);",
+					"    response.to.be.header(\"X-Response-Azure-FDID\", _.afdObjectId);",
+					"};"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "9648dcca-5b91-4385-ad76-7e64d9c36e19",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}

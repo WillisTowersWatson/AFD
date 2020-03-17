@@ -32,7 +32,9 @@ namespace WTW.CET.AFD.WebApp.Controllers
       ViewData["Headers"] = headers;
       ViewData["RemoteIp"] = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress;
 
-      ViewData["AllowedFrontEndHosts"] = appRepository.AllowedFrontEndHosts == null ? "" : string.Join(";", appRepository.AllowedFrontEndHosts);
+      ViewData["AllowedAzureFDIDs"] = appRepository.AllowedAzureFDIDs == null ? "" : string.Join(";", appRepository.AllowedAzureFDIDs);
+
+      ViewData["HealthProbePath"] = appRepository.HealthProbePath;
 
       ViewData["OriginalContexts"] = appRepository.HttpContexts;
 

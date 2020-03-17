@@ -7,8 +7,9 @@ namespace WTW.CET.AFD.WebApp.Interfaces
   /// </summary>
   public interface IAppRepository
   {
-    IList<string> AllowedFrontEndHosts { get; set; }
-    string HealthProbePath { get; set; }
+    IList<string>? AllowedAzureFDIDs { get; set; }
+
+    string? HealthProbePath { get; set; }
 
     IList<HttpContextCacheEntry> HttpContexts { get; }
   }
